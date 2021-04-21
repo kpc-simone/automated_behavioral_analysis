@@ -11,7 +11,7 @@ from image_video_processing import thresholdImage, getPrimitives
 
 def initializeDF (p_cols,d_cols,b_cols,trp,FPS):
     out_data = {}
-    ts = np.linspace(trp[0],trp[1],(trp[1]-trp[0])*FPS)
+    ts = np.linspace(trp[0],trp[1],int(trp[1]-trp[0])*FPS)
     n_frames = len(ts)
     out_data['time'] = ts
     out_data['shadow'] = False
@@ -40,40 +40,18 @@ def initializeCSV(videopath,modifier,rep):
     
     return [animal,day,rep],csvfilename    
     
-def analyzeTrial(thresh_dict,frame,vidcap,FPS,trp,a_dict,sh_dict,nest_corners,S,csvfilename,xform,arena_corners,plot,background,rlim=5.0,vlim=150.0):
-    p_cols = ['xc','yc','minr','maxr','maj-ax','min-ax','orientation','x-pos','y-pos']
-    d_cols = ['x-corr','y-corr','x-vel','y-vel','speed']
-    b_cols = ['rear','freeze','escape','hide']
-    
-    thresh_level_animal = thresh_dict['animal']
-    thresh_level_shadow = thresh_dict['shadow']
-    
-    df0,p_cols = initializeDF(p_cols,d_cols,b_cols,trp,FPS)
-    print(df0.head())
-    
+def analyzeInterval(interval_type,thresh_dict,frame,vidcap,FPS,a_dict,nest_corners,S,csvfilename,xform,arena_corners,plot,rlim=5.0,vlim=150.0,sh_dict=None,trp=None,shp=None):
     tS_start = int(vidcap.get(cv2.CAP_PROP_POS_MSEC))/1000
-    vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(vidcap.get(cv2.CAP_PROP_POS_FRAMES)-10*FPS))
+    if interval_type == 'trials-automatic' or interval_type == 'trials-userdefined':
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(vidcap.get(cv2.CAP_PROP_POS_FRAMES)+trp[0]*FPS))
     t0_analysis = int(vidcap.get(cv2.CAP_PROP_POS_MSEC))
     print('analyzing behavior for trial {} from {}'.format(S+1,t0_analysis/1000))
     
-    roi_sh = frame[sh_dict['ymin']:sh_dict['ymin']+sh_dict['height'],sh_dict['xmin']:sh_dict['xmin']+sh_dict['width']]
-    lbl_sh,thresh_sh,level_sh = thresholdImage(roi_sh,thresh_level_shadow,adaptive=False)
-    
+    thresh_level_animal = thresh_dict['animal']
     roi_a = frame[a_dict['ymin']:a_dict['ymin']+a_dict['height'],a_dict['xmin']:a_dict['xmin']+a_dict['width']]
-    #lbl_a,thresh_a,level_a = thresholdImage(roi_a,thresh_level_animal,adaptive=False,spatiodynamic=True,background=background)
     lbl_a,thresh_a,level_a = thresholdImage(roi_a,thresh_level_animal,adaptive=False,dynamic=True)
-    
     roi_a_n1 = np.zeros( (a_dict['height'],a_dict['width']) )
     roi_a_n2 = np.zeros( (a_dict['height'],a_dict['width']) )
-    #will need to pass another variable to analyzeTrial
-
-    if plot:
-        fig,plot_dict,data_dict = initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners)
-    t_idx = 0
-    shadow_detected = False
-    
-    d_cols = p_cols + d_cols
-    b_cols = d_cols + b_cols
     
     x0 = xform['x0']
     ymin = xform['ymin']
@@ -81,8 +59,25 @@ def analyzeTrial(thresh_dict,frame,vidcap,FPS,trp,a_dict,sh_dict,nest_corners,S,
     mx1 = xform['mx1']
     mx2 = xform['mx2']
     my = xform['my']
-    
-    print(arena_corners,ymin,y0_max)
+
+    if interval_type == 'trials-automatic':
+        thresh_level_shadow = thresh_dict['shadow']
+        roi_sh = frame[sh_dict['ymin']:sh_dict['ymin']+sh_dict['height'],sh_dict['xmin']:sh_dict['xmin']+sh_dict['width']]
+        lbl_sh,thresh_sh,level_sh = thresholdImage(roi_sh,thresh_level_shadow,adaptive=False)
+
+    p_cols = ['xc','yc','minr','maxr','maj-ax','min-ax','orientation','x-pos','y-pos']
+    d_cols = ['x-corr','y-corr','x-vel','y-vel','speed']
+    b_cols = ['rear','freeze','escape','hide']
+    df0,p_cols = initializeDF(p_cols,d_cols,b_cols,trp,FPS)
+    print(df0.head())
+    d_cols = p_cols + d_cols
+    b_cols = d_cols + b_cols    
+    #will need to pass another variable to analyzeTrial
+
+    if plot:
+        fig,plot_dict,data_dict = initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners)
+    t_idx = 0
+    shadow_detected = False
     
     escape = False
     # set initial primitives
@@ -92,29 +87,29 @@ def analyzeTrial(thresh_dict,frame,vidcap,FPS,trp,a_dict,sh_dict,nest_corners,S,
             break
         key = cv2.waitKey(1)
         
-        roi_sh = frame[sh_dict['ymin']:sh_dict['ymin']+sh_dict['height'],sh_dict['xmin']:sh_dict['xmin']+sh_dict['width']]
-        lbl_sh,thresh_sh,level_sh = thresholdImage(roi_sh,thresh_level_shadow)          #global binarization
-        
         roi_a = frame[a_dict['ymin']:a_dict['ymin']+a_dict['height'],a_dict['xmin']:a_dict['xmin']+a_dict['width']]
-        
         if t_idx > 1:
-            #todo: return roi
             roi_a = cv2.blur(cv2.cvtColor(cv2.cvtColor(roi_a, cv2.COLOR_BGR2RGB), cv2.COLOR_BGR2GRAY),(6,6))
             roi_a_avg = np.float32(roi_a*0.6 + roi_a_n1*0.3 + roi_a_n2*0.1)
-            #print(roi_a.shape,roi_a_n1.shape,roi_a_n2.shape,roi_a_avg.shape)
-            
             lbl_a,thresh_a,level_a = thresholdImage(roi_a_avg,level_a,adaptive=False,dynamic=True,ymin = ymin,ymax=y0_max+ymin-25)
         elif t_idx > 0:
             lbl_a,thresh_a,level_a = thresholdImage(roi_a,thresh_level_animal,adaptive=False,dynamic=True)
-            
         else:
             lbl_a,thresh_a,level_a = thresholdImage(roi_a,thresh_level_animal,adaptive=False,dynamic=True)
-       
         roi_a_n2 = roi_a_n1
         roi_a_n1 = cv2.blur(cv2.cvtColor(cv2.cvtColor(roi_a, cv2.COLOR_BGR2RGB), cv2.COLOR_BGR2GRAY),(6,6))
         
-        df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]] = getPrimitives(lbl_a,lbl_sh,df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]],ymin = ymin,ymax=y0_max+ymin-25)
-        #print(df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]])
+        if interval_type == 'other':
+            df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]] = getPrimitives(lbl_a,df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]],ymin = ymin,ymax=y0_max+ymin-25,interval_type=interval_type)
+        
+        elif interval_type == 'trials-userdefined':
+            relative_time = df0.at[t_idx,'time']
+            df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]] = getPrimitives(lbl_a,df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]],ymin = ymin,ymax=y0_max+ymin-25,interval_type=interval_type,shadow_period_exact=shp,relative_time = relative_time)
+        
+        elif interval_type == 'trials-automatic':
+            roi_sh = frame[sh_dict['ymin']:sh_dict['ymin']+sh_dict['height'],sh_dict['xmin']:sh_dict['xmin']+sh_dict['width']]
+            lbl_sh,thresh_sh,level_sh = thresholdImage(roi_sh,thresh_level_shadow)          #global binarization            
+            df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]] = getPrimitives(lbl_a,df0.iloc[t_idx, [df0.columns.get_loc(col) for col in p_cols]],ymin = ymin,ymax=y0_max+ymin-25,interval_type=interval_type,lbl_sh=lbl_sh)
         
         if t_idx > 0:
             
@@ -177,37 +172,38 @@ def analyzeTrial(thresh_dict,frame,vidcap,FPS,trp,a_dict,sh_dict,nest_corners,S,
     if plot:
         plt.close(fig)
     
-    found_hide = False
-    escape_trial = False
-    idxs = int(FPS * 10 ) + 1
-    idxs_old = idxs
-    idxh = int(FPS * 10 ) + 1
-    while ( (df0.at[idxs,'shadow'] == 'True') and (df0.at[idxs_old,'shadow'] == 'True') ) or ( (df0.at[idxs,'shadow'] == True) and (df0.at[idxs_old,'shadow'] == True) ):
+    if interval_type == 'trials-automatic' or interval_type == 'trials-userdefined':
+        found_hide = False
+        escape_trial = False
+        idxs = int(FPS * 10 ) + 1
         idxs_old = idxs
-        idxs += 1
-        if not found_hide:
-            idxh += 1
-            if df0.at[idxh,'hide'] == 1.0 or df0.at[idxh,'hide'] == '1.0':
-                found_hide = True
-                escape_trial = True
-    tS_end = float(df0.at[idxs,'time'])
-    
-    if escape_trial:
-        tH_init = float(df0.at[idxh,'time'])
-        idxe = idxh
-        while df0.at[idxe,'escape'] == 0.0 or df0.at[idxe,'escape'] == '0.0':
-            print(idxe,df0.at[idxe,'escape'])
-            idxe -= 2
-        while df0.at[idxe,'escape'] == 1.0 or df0.at[idxe,'escape'] == '1.0':
-            print(idxe,df0.at[idxe,'escape'])
-            idxe -= 2
-        tE_init = float(df0.at[idxe,'time'])
-    else:
-        tH_init = 'n/a'
-        tE_init = 'n/a'
-    
-    #row = ['animal','day','trial','shadowON','escape','hide','shadowOFF']
-    key_timings = [tS_start,tE_init,tH_init,tS_end]
+        idxh = int(FPS * 10 ) + 1
+        while ( (df0.at[idxs,'shadow'] == 'True') and (df0.at[idxs_old,'shadow'] == 'True') ) or ( (df0.at[idxs,'shadow'] == True) and (df0.at[idxs_old,'shadow'] == True) ):
+            idxs_old = idxs
+            idxs += 1
+            if not found_hide:
+                idxh += 1
+                if df0.at[idxh,'hide'] == 1.0 or df0.at[idxh,'hide'] == '1.0':
+                    found_hide = True
+                    escape_trial = True
+        tS_end = float(df0.at[idxs,'time'])
         
-    print('timing data in analyzeTrial: ',key_timings)    
-    return key_timings    
+        if escape_trial:
+            tH_init = float(df0.at[idxh,'time'])
+            idxe = idxh
+            while df0.at[idxe,'escape'] == 0.0 or df0.at[idxe,'escape'] == '0.0':
+                print(idxe,df0.at[idxe,'escape'])
+                idxe -= 2
+            while df0.at[idxe,'escape'] == 1.0 or df0.at[idxe,'escape'] == '1.0':
+                print(idxe,df0.at[idxe,'escape'])
+                idxe -= 2
+            tE_init = float(df0.at[idxe,'time'])
+        else:
+            tH_init = 'n/a'
+            tE_init = 'n/a'
+        
+        #row = ['animal','day','trial','shadowON','escape','hide','shadowOFF']
+        key_timings = [tS_start,tE_init,tH_init,tS_end]
+            
+        print('timing data in analyzeTrial: ',key_timings)    
+        return key_timings    

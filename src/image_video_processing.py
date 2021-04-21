@@ -29,16 +29,16 @@ def selectROIs(frame):
     }
     cv2.destroyAllWindows()
     
-    print('identify shadow area')
-    box_s = cv2.selectROIs("Frame", frame, fromCenter=False)
-    ((xsh,ysh,wsh,hsh),) = tuple(map(tuple, box_s))
-    sh_dict = {
-        'xmin'      : xsh,
-        'ymin'      : ysh,
-        'width'     : wsh,
-        'height'    : hsh,
-    }
-    cv2.destroyAllWindows()
+    # print('identify shadow area')
+    # box_s = cv2.selectROIs("Frame", frame, fromCenter=False)
+    # ((xsh,ysh,wsh,hsh),) = tuple(map(tuple, box_s))
+    # sh_dict = {
+        # 'xmin'      : xsh,
+        # 'ymin'      : ysh,
+        # 'width'     : wsh,
+        # 'height'    : hsh,
+    # }
+    # cv2.destroyAllWindows()
 	
     print('identify nest area')
     box_n = cv2.selectROIs("Frame", frame, fromCenter=False)
@@ -51,7 +51,7 @@ def selectROIs(frame):
     }
     cv2.destroyAllWindows()
 
-    return a_dict, sh_dict, nest_corners
+    return a_dict, nest_corners
 
 def thresholdImage(roi,level,adaptive=False,dynamic=False,spatiodynamic=False,background=None,y_corr=0.0,ymin=150,ymax=475):
     gray = cv2.cvtColor(cv2.cvtColor(roi, cv2.COLOR_BGR2RGB), cv2.COLOR_BGR2GRAY)
@@ -152,8 +152,17 @@ def getShadowStatus2(lbl_sh):
             return False
     return False        
     
-def getPrimitives(lbl_a,lbl_sh,df_slice,ymin=150,ymax=475):
-    df_slice['shadow'] = getShadowStatus2(lbl_sh)
+def getPrimitives(lbl_a,df_slice,ymin=150,ymax=475,interval_type='other',lbl_sh=None,shadow_period_exact=None,relative_time = None):
+    if interval_type == 'other':
+        df_slice['shadow'] = False
+    if interval_type == 'trials-userdefined':
+        if relative_time > shadow_period_exact[0] and relative_time < shadow_period_exact[1]:
+            df_slice['shadow'] = True
+        else:
+            df_slice['shadow'] = True
+    elif interval_type == 'trials-automatic':
+        df_slice['shadow'] = getShadowStatus2(lbl_sh)
+        
     for region in sorted(regionprops(lbl_a), key=lambda r: abs(r.centroid[0]-(ymax+ymin)/2), reverse=True):
         if region.centroid[0] > ymin and region.centroid[0] < ymax:
             #if region.area > 2650 and region.solidity > 0.8:
@@ -168,7 +177,6 @@ def getPrimitives(lbl_a,lbl_sh,df_slice,ymin=150,ymax=475):
             df_slice['min-ax'] = region.minor_axis_length
             df_slice['orientation'] = region.orientation
             break
-            #print(df_slice['orientation'])
             
     return df_slice    
 
