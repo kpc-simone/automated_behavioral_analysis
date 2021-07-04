@@ -31,6 +31,7 @@ a_corr = {
 'width'     : 300,
 'height'    : 500,
 }
+
 for ax in axes.ravel():
     draw_box(ax,a_corr)
     ax.set_xlim(-300,0)

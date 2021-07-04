@@ -19,17 +19,6 @@ from extract_features import initializeDF, initializeCSV, analyzeInterval
 from image_video_processing import *
 from analyzer_gui import *
 
-now = datetime.now()
-dt_str = now.strftime('%d%m%Y')
-summary_filepath = '../video_analyses/automated_trial_keytimings_{}.csv'.format(dt_str)
-
-if not os.path.isfile(summary_filepath):
-    row = ['animal','day','trial','shadowON','escape','hide','shadowOFF']
-    with open(summary_filepath, 'w') as csvFile:
-        filewriter = csv.writer(csvFile, delimiter = ',', quotechar = '|', quoting = csv.QUOTE_MINIMAL)
-        filewriter.writerow(row)
-    csvFile.close()
-
 if __name__ == '__main__':
     args = sys.argv
     print(args)
@@ -97,8 +86,6 @@ seg_method = 'BSAT'
 bg_frame = generateBackgroundModel(vidcap,roi,30,FPS)
 if ( seg_method == 'BSAT') or ( seg_method == '3CAT') or ( seg_method == 'ALDR'):
     method_args = getMethodParams(seg_method,config,bg_frame=bg_frame)
-
-#vidcap.release()
 
 in_analysis_interval = False
 shadow_detected = False

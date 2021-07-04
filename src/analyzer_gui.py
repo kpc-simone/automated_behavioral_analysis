@@ -658,6 +658,26 @@ class AnalysisConfigurer:
             eval(self.display_funcs[setting])
         
         self.root.title(f'Analysis Settings - {filepath}')
+        
+    def load_settings_fromfile(self,filepath,*args):
+        # filepath = askopenfilename(
+            # defaultextension='txt',
+            # filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')],
+        # )
+        # if not filepath:
+            # return
+        
+        settingsdf = pd.read_csv(filepath,index_col = 0)
+        
+        # lol
+        settingsdf['value'] = [ eval(re.search("<class '(.*)'>", typestr).group(1))(value) if typestr != "<class 'list'>" else eval(value) for value,typestr in zip(settingsdf['value'],settingsdf['dtype']) ]
+        
+        settingsdf.drop('dtype',axis=1,inplace=True)
+        print('SETTINGS LOADED:')
+        print(settingsdf.head(100))
+        
+        self.settings = settingsdf.to_dict()['value']
+        self.root.title(f'Analysis Settings - {filepath}')        
 
     def run_analysis(self,*args):
         self.root.quit()
