@@ -16,16 +16,17 @@ def draw_box(ax,bb):
 
     ax.add_patch(box)
 
-def initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners):
+def initializeFigAxes(trp,FPS,thresh_a,arena_corners,thresh_sh=None):
     
     fig = plt.figure(figsize=(18,8))
     gs = GridSpec(5,8,figure=fig)
 
     ax1 = fig.add_subplot(gs[:3,:3])
     ax2 = fig.add_subplot(gs[3:,:3])
-    ax_f = fig.add_subplot(gs[0,3:6])
-    ax_e = fig.add_subplot(gs[1,3:6],sharex=ax_f)
-    ax_r = fig.add_subplot(gs[2,3:6],sharex=ax_e)
+    
+    ax_r = fig.add_subplot(gs[0,3:6])
+    ax_f = fig.add_subplot(gs[1,3:6],sharex=ax_r)
+    ax_e = fig.add_subplot(gs[2,3:6],sharex=ax_f)
     ax_h = fig.add_subplot(gs[3,3:6],sharex=ax_r)
     ax_s = fig.add_subplot(gs[4,3:6],sharex=ax_h)
     ax_p = fig.add_subplot(gs[:,6:])
@@ -40,7 +41,8 @@ def initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners):
         
     for ax in (ax_f,ax_e,ax_h,ax_r):            
         ax.set_ylim(-0.1,1.1)
-                
+    
+    vlim = 150
     ax_s.set_ylim(0.0,vlim)
     
     ax_p.set_xlim(-150,150)
@@ -54,7 +56,7 @@ def initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners):
     for entry in dict_entries:
         data_dict[entry] = []
     
-    arena = ax1.imshow(thresh_a,cmap='gray')
+    arena = ax1.imshow(thresh_a,cmap='binary')
 
     x,y, = [],[]
     
@@ -72,14 +74,20 @@ def initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners):
         x_old = x     
         y_old = y
     
-    shadow = ax2.imshow(thresh_sh,cmap='gray')
-    minor_axis, = ax1.plot(data_dict['xdata1'], data_dict['ydata1'], '-r', linewidth=1.0)
-    major_axis, = ax1.plot(data_dict['xdata2'], data_dict['ydata2'], '-r', linewidth=1.0)
-    position, = ax1.plot(data_dict['xdata'], data_dict['ydata'], color='silver',marker='.', markersize=10)
-    f_state, = ax_f.plot(data_dict['tdata'],data_dict['fdata'], color='#29AF7FFF',linewidth=2.0)
-    e_state, = ax_e.plot(data_dict['tdata'],data_dict['edata'], color='#33638DFF',linewidth=2.0)
-    h_state, = ax_h.plot(data_dict['tdata'],data_dict['hdata'], color='#482677FF',linewidth=2.0,)
-    r_state, = ax_r.plot(data_dict['tdata'],data_dict['rdata'], color='#FDE725FF',linewidth=2.0)
+    #minor_axis, = ax1.plot(data_dict['xdata1'], data_dict['ydata1'], '-r', linewidth=1.0)
+    #major_axis, = ax1.plot(data_dict['xdata2'], data_dict['ydata2'], '-r', linewidth=1.0)
+    position, = ax1.plot(data_dict['xdata'], data_dict['ydata'], color='red',marker='.', markersize=10)
+    # r_state, = ax_r.plot(data_dict['tdata'],data_dict['rdata'], color='#FDE725FF',linewidth=2.0)
+    # f_state, = ax_f.plot(data_dict['tdata'],data_dict['fdata'], color='#29AF7FFF',linewidth=2.0)
+    # e_state, = ax_e.plot(data_dict['tdata'],data_dict['edata'], color='#33638DFF',linewidth=2.0)
+    # h_state, = ax_h.plot(data_dict['tdata'],data_dict['hdata'], color='#482677FF',linewidth=2.0,)
+
+    r_state, = ax_r.plot(data_dict['tdata'],data_dict['rdata'], color='#EBBC6Fff',linewidth=2.0)
+    f_state, = ax_f.plot(data_dict['tdata'],data_dict['fdata'], color='#92ab87FF',linewidth=2.0)
+    e_state, = ax_e.plot(data_dict['tdata'],data_dict['edata'], color='#55868CFF',linewidth=2.0)
+    h_state, = ax_h.plot(data_dict['tdata'],data_dict['hdata'], color='#675159FF',linewidth=2.0)    
+    # panic run - 96363C
+    
     s_state, = ax_s.plot(data_dict['tdata'],data_dict['sdata'], color='dimgray',linewidth=2.0)
     vx_state, = ax_s.plot(data_dict['tdata'],data_dict['vxdata'], color='steelblue',linewidth=2.0)
     vy_state, = ax_s.plot(data_dict['tdata'],data_dict['vydata'], color='firebrick',linewidth=2.0)
@@ -87,9 +95,8 @@ def initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners):
     
     plot_dict = {
     'arena'             :   arena,
-    'shadow'            :   shadow,
-    'minor_axis'        :   minor_axis,
-    'major_axis'        :   major_axis,
+    #'minor_axis'        :   minor_axis,
+    #'major_axis'        :   major_axis,
     'position'          :   position,
     'f_state'           :   f_state,
     'e_state'           :   e_state,
@@ -101,6 +108,11 @@ def initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners):
     'p_state'           :   p_state,
     }
     
+    if thresh_sh is not None:
+        shadow = ax2.imshow(thresh_sh,cmap='gray',vmin=0, vmax=255)
+        plot_dict['shadow'] = shadow
+        print('initialized shadow axis')
+    
     a_corr = {
     'xmin'      : -150,
     'ymin'      : 0,
@@ -110,18 +122,29 @@ def initializeFigAxes(trp,FPS,rlim,vlim,thresh_a,thresh_sh,arena_corners):
     
     draw_box(ax_p,a_corr)
     nest = plt.Rectangle((-145, 0), 160, 120,
-                     facecolor='#482677FF', alpha=0.5)
+                     facecolor='#675159FF', alpha=0.5)
 
     ax_p.add_patch(nest)
     
     return fig, plot_dict, data_dict
 
-def updateFigure(plot_dict,data_dict,thresh_sh,thresh_a):
+def updateFigure(plot_dict,data_dict,thresh_a,thresh_sh=None):
     
-    plot_dict['shadow'].set_data(thresh_sh)
+    if thresh_sh is not None:
+        plot_dict['shadow'].set_data(thresh_sh)
+        
+        #fig,(axt1,axt2) = plt.subplots(1,2)
+        #axt1.imshow(thresh_sh,cmap='gray')
+        #axt2.imshow(thresh_sh,cmap='binary')
+        #plt.show(block=False)
+        #plt.show()
+        #plt.pause(0.2)
+        #plt.close()
+        #print('updating shadow axis')
+        
     plot_dict['arena'].set_data(thresh_a)
-    plot_dict['minor_axis'].set_data(data_dict['xdata1'],data_dict['ydata1'])
-    plot_dict['major_axis'].set_data(data_dict['xdata2'],data_dict['ydata2'])
+    #plot_dict['minor_axis'].set_data(data_dict['xdata1'],data_dict['ydata1'])
+    #plot_dict['major_axis'].set_data(data_dict['xdata2'],data_dict['ydata2'])
     plot_dict['f_state'].set_data(data_dict['tdata'],data_dict['fdata'])
     plot_dict['s_state'].set_data(data_dict['tdata'],data_dict['sdata'])
     plot_dict['e_state'].set_data(data_dict['tdata'],data_dict['edata'])

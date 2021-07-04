@@ -23,19 +23,31 @@ class AnalysisConfigurer:
             'day'                   :   'self.display_day()',
             'field1'                :   'self.display_field1()',
             'group1'                :   'self.display_group1()',
-            'stim_thresh_level'     :   'self.display_stim_thresh()',
+            'videopath'             :   'self.display_selected_videofile()',
+            'FPS'                   :   'self.display_FPS()',
+            'topview_frame_0'       :   'self.display_topview_roi()',
+            'topview_xmin'          :   'self.display_topview_roi()',
+            'topview_ymin'          :   'self.display_topview_roi()',
+            'topview_width'         :   'self.display_topview_roi()',
+            'topview_height'        :   'self.display_topview_roi()',            
+            'topview_thresh_level'  :   'self.display_topview_thresh()',            
             'interval type'         :   'self.display_intervaltype_selection()',
-            'approx. trial times'   :   'self.display_trialtimes()', 
-            'shadow on times'       :   'self.display_trialtimes()', 
-            'shadow off times'      :   'self.display_trialtimes()', 
             'analysis start'        :   'self.display_startAn()',            
             'analysis stop'         :   'self.display_stopAn()',
-            'videopath'             :   'self.display_selected_videofile()',
             'stim_frame_0'          :   'self.display_selected_videofile()',
             'stim_xmin'             :   'self.display_stim_roi()',
             'stim_ymin'             :   'self.display_stim_roi()',
             'stim_width'            :   'self.display_stim_roi()',
             'stim_height'           :   'self.display_stim_roi()',
+            'stim_thresh_level'     :   'self.display_stim_thresh()',
+            'approx. trial times'   :   'self.display_trialtimes()', 
+            'shadow on times'       :   'self.display_trialtimes()', 
+            'shadow off times'      :   'self.display_trialtimes()', 
+            'shelter_xmin'          :   'self.display_shelter_roi()',
+            'shelter_ymin'          :   'self.display_shelter_roi()',
+            'shelter_width'         :   'self.display_shelter_roi()',
+            'shelter_height'        :   'self.display_shelter_roi()',
+            'arena_corners'         :   'self.display_arena_corners()',
         }
         
         self.root = tk.Toplevel()
@@ -110,13 +122,29 @@ class AnalysisConfigurer:
         self.tab_views.columnconfigure(0, minsize=10, weight=1)        
         self.tab_views.columnconfigure(1, minsize=self.img_width, weight=1)
         self.tab_views.columnconfigure(2, minsize=10, weight=1)   
+        self.tab_views.columnconfigure(3, minsize=10, weight=1)   
 
         self.btn_open        = ttk.Button(self.tab_views, text='Select Video File', command = self.handle_select_videofile)    
         self.btn_open.grid(row=0, column=0, sticky='ew', padx=5)
-        self.sc_vidframe  = tk.Scale(self.tab_views, from_= 0.000, to= 1.000, resolution=0.001,command = self.handle_video_frame,orient=HORIZONTAL,length=self.img_width)
+        self.sc_vidframe = tk.Scale(self.tab_views, from_= 0.000, to= 1.000, resolution=0.001,command = self.handle_video_frame,orient=HORIZONTAL,length=self.img_width)
         self.sc_vidframe.grid(row=0,column=1, sticky='ew', padx=5)
-        self.panel_vid       = tk.Canvas(self.tab_views, bg='black')       
-        self.panel_vid.grid(row=1, column=1, sticky="nsew")        
+        self.panel_vid       = tk.Canvas(self.tab_views, bg='black',width=self.img_width,height=self.img_height)       
+        self.panel_vid.grid(row=1, column=1, sticky="n")        
+
+        lbl_fps = tk.Label(self.tab_views,text='FPS',anchor='e').grid(row=0,column=2)
+        self.fpsSV = StringVar()
+        self.entr_fps = tk.Entry(self.tab_views, textvariable = self.fpsSV,validate='focusout',validatecommand = self.handle_fps_entry)
+        self.entr_fps.grid(row=0,column=3) 
+        
+        self.arena_corners = []
+        self.btn_set_arena_corners = ttk.Button(self.tab_views, text='Identify Arena Corners', command = self.handle_arena_corners)
+        self.btn_set_arena_corners.grid(row=2, column=0, sticky='n', padx=5)
+        self.btn_set_topview_roi = ttk.Button(self.tab_views, text='Set ROI', command = self.handle_select_topview_roi)
+        self.btn_set_topview_roi.grid(row=3, column=0, sticky='n', padx=5)
+        self.panel_topview       = tk.Canvas(self.tab_views, bg='black',width=self.img_width,height=self.img_height)       
+        self.panel_topview.grid(row=3, column=1, sticky="n")        
+        self.sc_topview_thresh = tk.Scale(self.tab_views, from_= 255, to= 0, command = self.handle_thresh_topview)
+        self.sc_topview_thresh.grid(row=3,column=2, sticky='ns')
         
         # INTERVALS TAB
         self.tab_intervals = ttk.Frame(self.tab_control)
@@ -154,15 +182,31 @@ class AnalysisConfigurer:
         self.entr_stopan = tk.Entry(self.tab_intervals, textvariable = self.stopAnSV,validate='focusout',validatecommand = self.handle_stopAn_entry)
         self.entr_stopan.grid(row=6,column=3)        
         
-        self.btn_set_roi     = ttk.Button(self.tab_intervals, text='Set ROI', command = self.handle_select_roi)
+        self.btn_set_roi     = ttk.Button(self.tab_intervals, text='Set ROI', command = self.handle_select_stim_roi)
         self.sc_thresh  = tk.Scale(self.tab_intervals, from_= 255, to= 0, command = self.handle_thresh_stim)
-        self.panel_stim_vid = tk.Canvas(self.tab_intervals, bg='black')
-        self.sc_stim_vidframe  = tk.Scale(self.tab_intervals, from_= 0.000, to= 1.000, resolution=0.001,command = self.handle_video_frame,orient=HORIZONTAL,length=self.img_width)
-        self.panel_stim = tk.Canvas(self.tab_intervals, bg='black')
+        self.panel_stim_vid = tk.Canvas(self.tab_intervals, bg='black',width=self.img_width,height=self.img_height)
+        self.sc_stim_vidframe  = tk.Scale(self.tab_intervals, from_= 0.000, to= 1.000, resolution=0.001,command = self.handle_stim_video_frame,orient=HORIZONTAL,length=self.img_width)
+        self.panel_stim = tk.Canvas(self.tab_intervals, bg='black',width=self.img_width,height=self.img_height)
         
         # BEHAVIORS
+        self.shelter_img_width = 225
+        self.shelter_img_height = 150
+        
         self.tab_behaviors = ttk.Frame(self.tab_control)
         self.tab_control.add(self.tab_behaviors,text='BEHAVIORS')        
+
+        self.tab_behaviors.rowconfigure(0, minsize=10)
+        self.tab_behaviors.rowconfigure(1, minsize=self.shelter_img_height,weight=1)
+        self.tab_behaviors.rowconfigure(2, minsize=10,weight=1)
+        
+        self.tab_behaviors.columnconfigure(0, minsize=10,weight=1)   
+        self.tab_behaviors.columnconfigure(1, minsize=10,weight=1)
+        self.tab_behaviors.columnconfigure(2, minsize=self.shelter_img_width,weight=1)
+
+        self.btn_set_shelter_roi = ttk.Button(self.tab_behaviors, text='Identify Shelter', command = self.handle_select_shelter_roi)
+        self.btn_set_shelter_roi.grid(row=1, column=1, sticky='ne', padx=5)
+        self.panel_shelter       = tk.Canvas(self.tab_behaviors, bg='black',width=self.shelter_img_width,height=self.shelter_img_height)
+        self.panel_shelter.grid(row=1, column=2,sticky='nw')
 
     # update a setting
     def update_setting(self,label,value,*args):
@@ -184,6 +228,9 @@ class AnalysisConfigurer:
     def display_group1(self,*args):
         self.group1SV.set(self.settings['group1'])               
 
+    def display_FPS(self,*args):
+        self.fpsSV.set(self.settings['FPS'])          
+
     def display_trialtimes(self,*args):
         if self.settings['interval type'] == 'trials-userdefined':
             self.shadowontimesSV.set(self.settings['shadow on times'])
@@ -204,16 +251,55 @@ class AnalysisConfigurer:
         self.stopAnSV.set(self.settings['analysis stop'])                
 
     def display_selected_videofile(self,*args):    
-        self.sc_vidframe.set(self.settings['stim_frame_0'])
+        self.sc_vidframe.set(self.settings['topview_frame_0'])
         
         vidcap = cv2.VideoCapture(self.settings['videopath'])
-        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['stim_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['topview_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
         success,frame0 = vidcap.read()
+        
+        self.vid_res_width = vidcap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        self.vid_res_height = vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         vidcap.release()
         
         img = ImageTk.PhotoImage(Image.fromarray(frame0).resize((self.img_width, self.img_height), Image.ANTIALIAS))
         self.panel_vid.create_image(0,0,anchor = 'nw',image = img)
         self.panel_vid.image = img
+
+        sh_img = ImageTk.PhotoImage(Image.fromarray(frame0).resize((self.shelter_img_width, self.shelter_img_height), Image.ANTIALIAS))
+        self.panel_shelter.create_image(0,0,anchor = 'nw',image = sh_img)
+        self.panel_shelter.image = sh_img
+
+    def display_arena_corners(self,*args):    
+        #self.sc_vidframe.set(self.settings['topview_frame_0'])
+
+        for x,y in self.arena_corners:
+            x = x * self.img_width / self.vid_res_width
+            y = y * self.img_height / self.vid_res_height
+            self.panel_vid.create_oval(x-1,y-1,x+1,y+2,fill='white',outline='white')
+        
+    def display_shelter_roi(self,*args):    
+        #self.sc_vidframe.set(self.settings['topview_frame_0'])
+        
+        vidcap = cv2.VideoCapture(self.settings['videopath'])
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['topview_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        success,frame0 = vidcap.read()
+        vidcap.release()
+        
+        sh_img = ImageTk.PhotoImage(Image.fromarray(frame0).resize((self.shelter_img_width, self.shelter_img_height), Image.ANTIALIAS))
+        self.panel_shelter.create_image(0,0,anchor = 'nw',image = sh_img)
+        self.panel_shelter.image = sh_img
+        
+        xmin = self.settings['shelter_xmin']
+        ymin = self.settings['shelter_ymin']
+        xmax = self.settings['shelter_xmin'] + self.settings['shelter_width']
+        ymax = self.settings['shelter_ymin'] + self.settings['shelter_height']
+        
+        xmin = xmin * self.shelter_img_width / self.vid_res_width
+        xmax = xmax * self.shelter_img_width / self.vid_res_width
+        ymin = ymin * self.shelter_img_height / self.vid_res_height
+        ymax = ymax * self.shelter_img_height / self.vid_res_height
+        
+        self.panel_shelter.create_rectangle(xmin,ymin,xmax,ymax,outline='#482677',fill=None)
 
     def display_stim_videofile(self,*args):    
         self.sc_stim_vidframe.set(self.settings['stim_frame_0'])
@@ -226,7 +312,43 @@ class AnalysisConfigurer:
         img = ImageTk.PhotoImage(Image.fromarray(frame0).resize((self.img_width, self.img_height), Image.ANTIALIAS))
         self.panel_stim_vid.create_image(0,0,anchor = 'nw',image = img)
         self.panel_stim_vid.image = img
+
+    def display_topview_roi(self,*args):  
+        xat = self.settings['topview_xmin']
+        yat = self.settings['topview_ymin']
+        wat = self.settings['topview_width']
+        hat = self.settings['topview_height']
+        
+        vidcap = cv2.VideoCapture(self.settings['videopath'])
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['topview_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        success,frame0 = vidcap.read()
+        vidcap.release()
+
+        topviewROI = frame0[yat:yat+hat,xat:xat+wat]        
+        img = ImageTk.PhotoImage(Image.fromarray(topviewROI).resize((self.img_width, self.img_height), Image.ANTIALIAS))
+        self.panel_topview.create_image(0,0,anchor = 'nw',image = img)
+        self.panel_topview.image = img
+
+    def display_topview_thresh(self,*args):
+        xat = self.settings['topview_xmin']
+        yat = self.settings['topview_ymin']
+        wat = self.settings['topview_width']
+        hat = self.settings['topview_height']
     
+        vidcap = cv2.VideoCapture(self.settings['videopath'])
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['topview_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        success,frame0 = vidcap.read()
+        vidcap.release()
+        
+        topviewROI = frame0[yat:yat+hat,xat:xat+wat] 
+        self.sc_topview_thresh.set(self.settings['topview_thresh_level'])
+        gray = cv2.cvtColor(cv2.cvtColor(topviewROI, cv2.COLOR_BGR2RGB), cv2.COLOR_BGR2GRAY)
+        blur = cv2.blur(gray,(10,10))
+        ret,thresh_img = cv2.threshold(blur,self.settings['topview_thresh_level'],255,cv2.THRESH_BINARY)         
+        disp = ImageTk.PhotoImage(Image.fromarray(thresh_img).resize((self.img_width, self.img_height), Image.ANTIALIAS))
+        self.panel_topview.create_image(0,0,anchor = 'nw',image = disp)
+        self.panel_topview.image = disp
+
     def display_stim_roi(self,*args):  
         xsh = self.settings['stim_xmin']
         ysh = self.settings['stim_ymin']
@@ -242,7 +364,7 @@ class AnalysisConfigurer:
         img = ImageTk.PhotoImage(Image.fromarray(stimROI).resize((self.img_width, self.img_height), Image.ANTIALIAS))
         self.panel_stim.create_image(0,0,anchor = 'nw',image = img)
         self.panel_stim.image = img
-        
+
     def display_stim_thresh(self,*args):
         xsh = self.settings['stim_xmin']
         ysh = self.settings['stim_ymin']
@@ -285,6 +407,11 @@ class AnalysisConfigurer:
     def handle_group1_entry(self,*args):
         group1 = self.group1SV.get()
         self.update_setting(label = 'group1', value = group1)         
+
+    def handle_fps_entry(self,*args):
+        fps = self.fpsSV.get()
+        self.update_setting(label = 'FPS', value = int(float(fps)))
+        print('handling fps entry')
 
     def display_intervaltype_selection(self,*args):
         if self.settings['interval type'] == 'trials-automatic':       
@@ -368,23 +495,75 @@ class AnalysisConfigurer:
         """Open a file for editing."""
         
         videopath = askopenfilename(
-            filetypes=[('Video Files', '*.avi'), ('All Files', '*.*')]
+            filetypes=[('Video Files', '*.avi; *.MP4'), ('All Files', '*.*')]
         )
         if not videopath:
             return
             
         self.update_setting(label = 'videopath',value=videopath)  
+        self.update_setting(label = 'topview_frame_0',value=0)
         self.update_setting(label = 'stim_frame_0',value=0)
         self.display_selected_videofile()    
     
     def handle_video_frame(self,*args):
         vidcap = cv2.VideoCapture(self.settings['videopath'])
+        vidframe = float(self.sc_vidframe.get())
+        
+        self.update_setting(label = 'topview_frame_0',value=vidframe)
+        self.display_selected_videofile()
+
+    def selectPoint(self,event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            print(x,",",y)
+            
+            self.arena_corners.append([x,y])
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            strXY = str(x)+", "+str(y)
+        
+    def handle_arena_corners(self,*args):
+        vidcap = cv2.VideoCapture(self.settings['videopath'])
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['topview_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        success,frame = vidcap.read()
+        vidcap.release()
+        for corner in ['back left','back right','front right','front left']:
+            cv2.imshow("frame",frame)
+            print('identify {} corner'.format(corner))
+            cv2.setMouseCallback("frame",self.selectPoint)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        self.update_setting(label = 'arena_corners',value=self.arena_corners)
+        self.display_arena_corners()    
+
+    def handle_stim_video_frame(self,*args):
+        vidcap = cv2.VideoCapture(self.settings['videopath'])
         vidframe = float(self.sc_stim_vidframe.get())
         
         self.update_setting(label = 'stim_frame_0',value=vidframe)
-        self.display_selected_videofile()
+        self.display_stim_videofile()
     
-    def handle_select_roi(self,*args):
+    def handle_select_topview_roi(self,*args):
+        vidcap = cv2.VideoCapture(self.settings['videopath'])
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['topview_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        success,frame0 = vidcap.read()
+        vidcap.release()
+    
+        box_s = cv2.selectROIs("Select top view ROI", frame0, fromCenter=False)
+        ((xat,yat,wat,hat),) = tuple(map(tuple, box_s))
+        cv2.destroyAllWindows()
+        
+        roi = {
+            'topview_xmin'     : xat,
+            'topview_ymin'     : yat,
+            'topview_width'    : wat,
+            'topview_height'   : hat,
+        }    
+        
+        for label,value in roi.items():
+            self.update_setting(label=label,value=value)
+            
+        self.display_topview_roi()        
+    
+    def handle_select_stim_roi(self,*args):
         vidcap = cv2.VideoCapture(self.settings['videopath'])
         vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['stim_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
         success,frame0 = vidcap.read()
@@ -410,6 +589,32 @@ class AnalysisConfigurer:
         self.update_setting(label = 'stim_thresh_level',value=self.sc_thresh.get())
         self.display_stim_thresh()
 
+    def handle_thresh_topview(self,*args):
+        self.update_setting(label = 'topview_thresh_level',value=self.sc_topview_thresh.get())
+        self.display_topview_thresh()
+
+    def handle_select_shelter_roi(self,*args):
+        vidcap = cv2.VideoCapture(self.settings['videopath'])
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,int(self.settings['topview_frame_0']*vidcap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        success,frame0 = vidcap.read()
+        vidcap.release()
+    
+        box_s = cv2.selectROIs("Select shelter ROI", frame0, fromCenter=False)
+        ((xsh,ysh,wsh,hsh),) = tuple(map(tuple, box_s))
+        cv2.destroyAllWindows()
+        
+        roi = {
+            'shelter_xmin'     : xsh,
+            'shelter_ymin'     : ysh,
+            'shelter_width'    : wsh,
+            'shelter_height'   : hsh,
+        }    
+        
+        for label,value in roi.items():
+            self.update_setting(label=label,value=value)
+            
+        self.display_shelter_roi() 
+        
     def save_settings_file(self,*args):
         filepath = asksaveasfilename(
             defaultextension='txt',
@@ -430,6 +635,7 @@ class AnalysisConfigurer:
         self.root.title(f'Analysis Settings - {filepath}')
 
     # todo: configure a default filesaving location
+    # todo: learn wtf pickling is because this is a hack
     def load_settings_file(self,*args):
         filepath = askopenfilename(
             defaultextension='txt',
@@ -441,7 +647,7 @@ class AnalysisConfigurer:
         settingsdf = pd.read_csv(filepath,index_col = 0)
         
         # lol
-        settingsdf['value'] = [ eval(re.search("<class '(.*)'>", typestr).group(1))(value) for value,typestr in zip(settingsdf['value'],settingsdf['dtype']) ]
+        settingsdf['value'] = [ eval(re.search("<class '(.*)'>", typestr).group(1))(value) if typestr != "<class 'list'>" else eval(value) for value,typestr in zip(settingsdf['value'],settingsdf['dtype']) ]
         
         settingsdf.drop('dtype',axis=1,inplace=True)
         print('SETTINGS LOADED:')

@@ -1,0 +1,31 @@
+label,value,dtype
+phenotype,naive,<class 'str'>
+animal,m0401,<class 'str'>
+day,1,<class 'str'>
+field1,na,<class 'str'>
+group1,na,<class 'str'>
+videopath,F:/data/nuria videos/MVI_0401.MP4,<class 'str'>
+topview_frame_0,0.384,<class 'float'>
+stim_frame_0,0.384,<class 'float'>
+topview_xmin,236,<class 'numpy.intc'>
+topview_ymin,98,<class 'numpy.intc'>
+topview_width,699,<class 'numpy.intc'>
+topview_height,350,<class 'numpy.intc'>
+FPS,30,<class 'int'>
+arena_corners,"[[412, 87], [831, 88], [1076, 408], [281, 414], [343, 171], [731, 188], [934, 450], [237, 447]]",<class 'list'>
+topview_thresh_level,27,<class 'int'>
+interval type,trials-automatic,<class 'str'>
+approx. trial times,230,<class 'str'>
+analysis start,-230.0,<class 'float'>
+stim_xmin,434,<class 'numpy.intc'>
+stim_ymin,539,<class 'numpy.intc'>
+stim_width,246,<class 'numpy.intc'>
+stim_height,56,<class 'numpy.intc'>
+stim_thresh_level,55,<class 'int'>
+shelter_xmin,338,<class 'numpy.intc'>
+shelter_ymin,89,<class 'numpy.intc'>
+shelter_width,226,<class 'numpy.intc'>
+shelter_height,131,<class 'numpy.intc'>
+analysis stop,400.0,<class 'float'>
+shadow on times,,<class 'str'>
+shadow off times,,<class 'str'>
