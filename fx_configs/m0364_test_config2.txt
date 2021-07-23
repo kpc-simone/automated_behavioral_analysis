@@ -1,0 +1,30 @@
+label,value,dtype
+phenotype,naive,<class 'str'>
+animal,m0364,<class 'str'>
+day,1,<class 'str'>
+field1,nan,<class 'str'>
+videopath,E:/data/nuria videos/MVI_0364.MP4,<class 'str'>
+topview_frame_0,0.2724,<class 'float'>
+stim_frame_0,0.269,<class 'float'>
+FPS,30,<class 'int'>
+topview_xmin,281,<class 'numpy.intc'>
+topview_ymin,0,<class 'numpy.intc'>
+topview_width,797,<class 'numpy.intc'>
+topview_height,408,<class 'numpy.intc'>
+topview_thresh_level,20,<class 'int'>
+interval type,trials-automatic,<class 'str'>
+approx. trial times,180,<class 'str'>
+analysis start,-10.0,<class 'float'>
+analysis stop,10.0,<class 'float'>
+stim_xmin,490,<class 'numpy.intc'>
+stim_ymin,454,<class 'numpy.intc'>
+stim_width,288,<class 'numpy.intc'>
+stim_height,157,<class 'numpy.intc'>
+stim_thresh_level,89,<class 'int'>
+shelter_xmin,413,<class 'numpy.intc'>
+shelter_ymin,46,<class 'numpy.intc'>
+shelter_width,229,<class 'numpy.intc'>
+shelter_height,80,<class 'numpy.intc'>
+arena_corners,"[[414, 86], [833, 90], [1075, 409], [279, 412]]",<class 'list'>
+group1,nan,<class 'str'>
+topview_thresh_blocksize,321,<class 'int'>

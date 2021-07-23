@@ -1,0 +1,31 @@
+label,value,dtype
+topview_thresh_blocksize,761,<class 'int'>
+topview_thresh_level,1,<class 'int'>
+phenotype,ChR2,<class 'str'>
+animal,m1020,<class 'str'>
+day,1,<class 'str'>
+field1,lux,<class 'str'>
+group1,8,<class 'str'>
+videopath,E:/data/bnst_pvn_optostim_c5/assay/m1020_frontview_0000.avi,<class 'str'>
+topview_frame_0,0.1119,<class 'float'>
+stim_frame_0,0.403,<class 'float'>
+topview_xmin,20,<class 'numpy.intc'>
+topview_ymin,0,<class 'numpy.intc'>
+topview_width,605,<class 'numpy.intc'>
+topview_height,308,<class 'numpy.intc'>
+arena_corners,"[[132, 170], [511, 175], [626, 310], [22, 310]]",<class 'list'>
+interval type,trials-automatic,<class 'str'>
+approx. trial times,340,<class 'str'>
+analysis start,-20.0,<class 'float'>
+analysis stop,20.0,<class 'float'>
+stim_xmin,123,<class 'numpy.intc'>
+stim_ymin,362,<class 'numpy.intc'>
+stim_width,401,<class 'numpy.intc'>
+stim_height,117,<class 'numpy.intc'>
+stim_thresh_level,31,<class 'int'>
+shadow on times,,<class 'str'>
+shadow off times,,<class 'str'>
+shelter_xmin,146,<class 'numpy.intc'>
+shelter_ymin,130,<class 'numpy.intc'>
+shelter_width,158,<class 'numpy.intc'>
+shelter_height,69,<class 'numpy.intc'>
